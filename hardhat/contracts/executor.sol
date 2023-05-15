@@ -9,7 +9,7 @@ import "./interfaces/IPoolAddressesProvider.sol";
 import "./interfaces/IPool.sol";
 
 
-contract PerpPosition is Ownable {
+contract Executor is Ownable {
 
     IPoolAddressesProvider public ADDRESSES_PROVIDER;
     IPool public POOL;
@@ -43,12 +43,12 @@ contract PerpPosition is Ownable {
         _executeswap(arbData);
 
         //refund borrowed and fee
-        ERC20(asset).approve(address(POOL),amount+premium) ;
+        ERC20(asset).approve(address(POOL),amount+premium);
         ERC20(asset).transfer(address(POOL),amount+premium);
 
         //return profit to wallet
         uint remain = ERC20(asset).balanceOf(address(this));
-        ERC20(asset).approve(initiator,remain) ;
+        ERC20(asset).approve(initiator,remain);
         ERC20(asset).transfer(initiator,remain);
         rt = true;
     }
