@@ -122,6 +122,11 @@ const executorAbi = [
               "internalType": "address[]",
               "name": "routers",
               "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "types",
+              "type": "uint256[]"
             }
           ],
           "internalType": "struct Executor.Arbitrage",

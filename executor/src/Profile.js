@@ -20,7 +20,7 @@ function Profile() {
   const [firstAmount, setFirstAmount] = useState(1);
   const [address1, setAddress1] = useState('0xc2132d05d31c914a87c6611c10748aeb04b58e8f');
   const [address2, setAddress2] = useState('0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270');
-  const [dex1, setDex1] = useState('0xE592427A0AEce92De3Edee1F18E0157C05861564');
+  const [dex1, setDex1] = useState('0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506');
   const [dex2, setDex2] = useState('0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff');
 
   const [hashvalue, sethashValue] = useState("")
@@ -32,26 +32,33 @@ function Profile() {
   const { chain } = useNetwork();
   const { error, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
 
-  const routers = [
-    { "name": "Uniswap", 'address': '0xE592427A0AEce92De3Edee1F18E0157C05861564' },
-    { "name": "Quickswap", 'address': '0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff' },
-    { "name": "Sushiswap", 'address': '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506' },
-    { "name": "Polycatswap", 'address': '0x94930a328162957FF1dd48900aF67B5439336cBD' },
-    { "name": "Polydex.fi", 'address': '0xC60aE14F2568b102F8Ca6266e8799112846DD088' },
-    { "name": "test", 'address': '0xC60aE14F2568b102F8Ca6266e8799112846DD088' }
-  ]
+  const routers = {
+    [polygon.id]:[
+    { "name": "Uniswap", 'address': '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45' ,type:1},
+    { "name": "Quickswap", 'address': '0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff' ,type:0 },
+    { "name": "Sushiswap", 'address': '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506' ,type:0 },
+    { "name": "Polycatswap", 'address': '0x94930a328162957FF1dd48900aF67B5439336cBD'  ,type:0}
+    ]
+  }
   const lendingPool = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
   const pool = '0x794a61358d6845594f94dc1db02a252b5b4814ad';
 
   const executorAddress = {
-    [polygon.id]: '',
+    [polygon.id]: '0xbAEEBff42Bd8D3987D0aF1c95D52fa76d6Fce227',
     [bsc.id]: '',
   }
 
   const flashLoanExecute = async () => {
 
     const routerAddress = [dex1, dex2];
-    const paths = [address1, address2];
+    const paths = [address1, address2,address1];
+    const types=[0,0];
+
+    if(dex1=='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45') types[0]=1;
+    if(dex1=='0xC60aE14F2568b102F8Ca6266e8799112846DD088') types[0]=2;
+    if(dex2=='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45') types[1]=1;
+    if(dex2=='0xC60aE14F2568b102F8Ca6266e8799112846DD088') types[1]=2;
+
     const decimals = await readContract({
       address: paths[0],
       abi: ERC20_ABI,
@@ -62,7 +69,8 @@ function Profile() {
       firstAmountWei,
       address,
       paths,
-      routerAddress
+      routerAddress,
+      types
     ];
     const abiCoder = new ethers.utils.AbiCoder();
     const args =[
@@ -71,18 +79,13 @@ function Profile() {
       firstAmountWei,
       abiCoder.encode(
         ["uint256", "address","address[]","address[]"],
-        [
-          firstAmountWei,
-          address,
-          paths,
-          routerAddress
-        ]
+        payloadData
       ),
       0
     ] 
     try{
       const {hash} = await writeContract({
-        address: paths[0],
+        address: pool,
         abi: [
           { "inputs": [
               { "internalType": "address", "name": "receiverAddress", "type": "address" }, { "internalType": "address", "name": "asset", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" }, { "internalType": "bytes", "name": "params", "type": "bytes" }, { "internalType": "uint16", "name": "referralCode", "type": "uint16" }], "name": "flashLoanSimple", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
@@ -102,16 +105,22 @@ function Profile() {
 
   const regularExecute = async () => {
 
-    const routerAddress = [dex1, dex2];
-    const paths = [address1, address2];
+    const routerAddress = [dex1,dex2];
+    const paths = [address1, address2,address1];
+    const types=[0,0];
+
+    if(dex1=='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45') types[0]=1;
+    if(dex1=='0xC60aE14F2568b102F8Ca6266e8799112846DD088') types[0]=2;
+    if(dex2=='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45') types[1]=1;
+    if(dex2=='0xC60aE14F2568b102F8Ca6266e8799112846DD088') types[1]=2;
 
     //approve
-
     const decimals = await readContract({
       address: paths[0],
       abi: ERC20_ABI,
       functionName: 'decimals'
     })
+
     const firstAmountWei = ethers.utils.parseUnits(firstAmount.toString(), decimals);
     const allowance = await readContract({
       address: paths[0],
@@ -119,7 +128,7 @@ function Profile() {
       functionName: 'allowance',
       args: [address, executorAddress[chain.id]]
     })
-    if (allowance == 0 || allowance.lt(firstAmountWei)) {
+    if (Number(allowance)<Number(firstAmountWei)) {
       const args = [executorAddress[chain.id], firstAmountWei];
       await writeContract({
         address: paths[0],
@@ -129,14 +138,14 @@ function Profile() {
         account: address
       })
     }
-    console.log()
     //send
     const args = [
       [
         firstAmountWei,
         address,
         paths,
-        routerAddress
+        routerAddress,
+        types
       ]
     ];
     try {
@@ -184,7 +193,7 @@ function Profile() {
           Token2 Address : <input size="50" value={address2} onChange={e => setAddress2(e.target.value)} /><br />
           Dex 1 :
           <select value={dex1} onChange={e => setDex1(e.target.value)}>
-            {routers.map((item, i) =>
+            {routers[chain.id]?.map((item, i) =>
             (
               <option key={i} value={item.address}>
                 {item.name}
@@ -196,7 +205,7 @@ function Profile() {
           <br />
           Dex 2 :
           <select value={dex2} onChange={e => setDex2(e.target.value)}>
-            {routers.map((item, i) =>
+            {routers[chain.id]?.map((item, i) =>
             (
               <option key={i} value={item.address}>
                 {item.name}
