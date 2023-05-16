@@ -44,7 +44,7 @@ function Profile() {
   const pool = '0x794a61358d6845594f94dc1db02a252b5b4814ad';
 
   const executorAddress = {
-    [polygon.id]: '0xbAEEBff42Bd8D3987D0aF1c95D52fa76d6Fce227',
+    [polygon.id]: '0x6372fabb049d554ef26c347989b596b38c664c7f',
     [bsc.id]: '',
   }
 
@@ -218,7 +218,7 @@ function Profile() {
           <button onClick={() => flashLoanExecute()}>Execute FlashLoan</button> &nbsp;&nbsp;&nbsp;
           <button onClick={() => regularExecute()}>Execute Regular</button><br />
           {hashvalue != "" &&
-            <a href={"https://polygonscan.com/tx" + hashvalue}>last transaction tx : {hashvalue}</a>
+            <a href={"https://polygonscan.com/tx/" + hashvalue}>last transaction tx : {hashvalue}</a>
           }
         </div>
       </div>
