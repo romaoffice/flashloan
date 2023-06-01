@@ -8,7 +8,8 @@ import { useEffect, useState } from "react"
 import excutorAbi from './abi/executor'
 import ERC20_ABI from './abi/ERC20'
 import { prepareWriteContract, writeContract, readContract } from '@wagmi/core'
-
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import { useMoralis } from "react-moralis";
 
 const { chains } = configureChains(
   [polygon],
@@ -16,6 +17,8 @@ const { chains } = configureChains(
 )
 
 function Profile() {
+
+  const { authenticate, isAuthenticated, user } = useMoralis();
 
   const [firstAmount, setFirstAmount] = useState(1);
   const [address1, setAddress1] = useState('0xc2132d05d31c914a87c6611c10748aeb04b58e8f');
@@ -28,6 +31,7 @@ function Profile() {
   const { connect } = useConnect({
     connector: new InjectedConnector(),
   })
+  
   const { disconnect } = useDisconnect()
   const { chain } = useNetwork();
   const { error, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
@@ -166,6 +170,7 @@ function Profile() {
     return (
       <div style={{ 'padding': '50px' }}>
         <h2>Executor</h2>
+        <h3>Welcome to morails {user.get("username")}</h3>
         <div>
           Connected to {address} ({chain.name})
           {chains.map((x) => (
@@ -226,7 +231,9 @@ function Profile() {
   return (
     <div style={{ 'padding': '50px' }}>
       <h2>Executor</h2>
-      <button onClick={() => connect()}>Connect Wallet</button>
+      <div>
+        <button onClick={() => connect()}>Authenticate</button>
+      </div>
     </div>
   )
 }
