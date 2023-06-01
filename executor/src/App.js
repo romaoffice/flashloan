@@ -6,8 +6,7 @@ import { polygon } from 'wagmi/chains'
 import { publicProvider } from 'wagmi/providers/public'
 import Profile from './Profile';
 import { InjectedConnector } from 'wagmi/connectors/injected'
-import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import { WalletConnectLegacyConnector } from 'wagmi/connectors/walletConnectLegacy'
 import { MoralisProvider } from "react-moralis";
 
 const { chains, publicClient } = configureChains(
@@ -21,7 +20,12 @@ const config = createConfig({
   autoConnect: true,
   
   connectors: [
-    new InjectedConnector({ chains })
+    new InjectedConnector({ chains }),
+    new WalletConnectLegacyConnector({
+      chains: [polygon],
+      options: {
+        qrcode: true,
+      },})
   ],
   publicClient
 })

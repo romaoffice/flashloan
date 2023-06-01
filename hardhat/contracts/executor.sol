@@ -35,6 +35,9 @@ contract Executor is Ownable {
             POOL = IPool(pool);
     }
 
+    function setPool(address _pool) external {
+        POOL = IPool(_pool);
+    }
     function executeOperation(
         address asset,
         uint256 amount,
