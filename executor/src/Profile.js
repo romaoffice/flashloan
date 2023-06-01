@@ -28,7 +28,7 @@ function Profile() {
   const [address2, setAddress2] = useState('0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270');
   const [dex1, setDex1] = useState('0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506');
   const [dex2, setDex2] = useState('0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff');
-
+  const [tokenMetadata,setTokenMetadata] = useState([])
   const [hashvalue, sethashValue] = useState("")
   const { address } = useAccount()
 
@@ -90,12 +90,64 @@ function Profile() {
   const lendingPool = '0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb';
   const pool = '0x794a61358d6845594f94dc1db02a252b5b4814ad';
 
+  const tokenlist = {
+    [polygon.id]: [
+      '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+      '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+      '0x3BA4c387f786bFEE076A58914F5Bd38d668B42c3',
+      '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+      '0xdab529f40e671a1d4bf91361c21bf9f0c9712ab7',
+      '0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b',
+      '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6'
+    ],
+    [bsc.id]: [
+      '0x2170ed0880ac9a755fd29b2688956bd959f933f8',
+      '0x55d398326f99059ff775485246999027b3197955',
+      '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+      '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
+      '0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe',
+      '0x3ee2200efb3400fabb9aacf31297cbdd1d435d47',
+      '0xba2ae424d960c26247dd6c32edc70b295c744c43',
+      '0xcc42724c6683b7e57334c4e856f4c9965ed682bd',
+      '0x4338665cbb7b2485a8855a139b75d5e34ab0db94'
+    ],
+  }
   const executorAddress = {
     [polygon.id]: '0x6372fabb049d554ef26c347989b596b38c664c7f',
     [bsc.id]: '0xB0dd551dAB7B7945aA330873bD355305BBaCf2f2',
   }
 
-  
+  useEffect(()=>{
+    if(!chain){
+      setTokenMetadata([])
+      return
+    }
+    if(chain.id==polygon.id){
+      setDex1('0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506')
+      setDex2('0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff')
+      setAddress1('0xc2132d05d31c914a87c6611c10748aeb04b58e8f')
+      setAddress2('0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270')
+
+      
+    }
+    if(chain.id==bsc.id){
+      setDex1('0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2')
+      setDex2('0x62c1a0d92b09d0912f7bb9c96c5ecdc7f2b87059')
+      setAddress1('0x55d398326f99059ff775485246999027b3197955')
+      setAddress2('0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c')
+    }
+    const getTokenList = async()=>{
+      const options = {
+        chain: chain.id,
+        addresses: tokenlist[chain.id]
+      };      
+      const _tokenMetadata = await Moralis.Web3API.token.getTokenMetadata(options);      
+      setTokenMetadata(_tokenMetadata)
+      }
+    if(isInitialized && chain){
+      getTokenList()
+    }
+  },[chain,isInitialized])
   const flashLoanExecute = async () => {
 
     const routerAddress = [dex1, dex2];
@@ -107,6 +159,14 @@ function Profile() {
     if(dex2=='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45') types[1]=1;
     if(dex2=='0xC60aE14F2568b102F8Ca6266e8799112846DD088') types[1]=2;
 
+    if(dex1=='0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2') types[0]=1;
+    if(dex2=='0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2') types[1]=1;
+    
+    console.log({
+      address: paths[0],
+      abi: ERC20_ABI,
+      functionName: 'decimals'
+    })
     const decimals = await readContract({
       address: paths[0],
       abi: ERC20_ABI,
@@ -161,42 +221,45 @@ function Profile() {
     if(dex1=='0xC60aE14F2568b102F8Ca6266e8799112846DD088') types[0]=2;
     if(dex2=='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45') types[1]=1;
     if(dex2=='0xC60aE14F2568b102F8Ca6266e8799112846DD088') types[1]=2;
-
-    //approve
-    const decimals = await readContract({
-      address: paths[0],
-      abi: ERC20_ABI,
-      functionName: 'decimals'
-    })
-
-    const firstAmountWei = ethers.utils.parseUnits(firstAmount.toString(), decimals);
-    const allowance = await readContract({
-      address: paths[0],
-      abi: ERC20_ABI,
-      functionName: 'allowance',
-      args: [address, executorAddress[chain.id]]
-    })
-    if (Number(allowance)<Number(firstAmountWei)) {
-      const args = [executorAddress[chain.id], firstAmountWei];
-      await writeContract({
+    if(dex1=='0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2') types[0]=1;
+    if(dex2=='0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2') types[1]=1;
+    
+    
+    try {
+      //approve
+      const decimals = await readContract({
         address: paths[0],
         abi: ERC20_ABI,
-        functionName: 'approve',
-        args: args,
-        account: address
+        functionName: 'decimals'
       })
-    }
-    //send
-    const args = [
-      [
-        firstAmountWei,
-        address,
-        paths,
-        routerAddress,
-        types
-      ]
-    ];
-    try {
+
+      const firstAmountWei = ethers.utils.parseUnits(firstAmount.toString(), decimals);
+      const allowance = await readContract({
+        address: paths[0],
+        abi: ERC20_ABI,
+        functionName: 'allowance',
+        args: [address, executorAddress[chain.id]]
+      })
+      if (Number(allowance)<Number(firstAmountWei)) {
+        const args = [executorAddress[chain.id], firstAmountWei];
+        await writeContract({
+          address: paths[0],
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: args,
+          account: address
+        })
+      }
+      //send
+      const args = [
+        [
+          firstAmountWei,
+          address,
+          paths,
+          routerAddress,
+          types
+        ]
+      ];
       const { hash } = await writeContract({
         address: executorAddress[chain.id],
         abi: excutorAbi,
@@ -243,9 +306,33 @@ function Profile() {
           <button onClick={() => disconnect()}>Disconnect</button>
         </div>
         <div style={{ "paddingTop": "30px" }}>
-          Amount : <input value={firstAmount} onChange={e => setFirstAmount(e.target.value)} /><br />
-          Token1 Address : <input size="50" value={address1} onChange={e => setAddress1(e.target.value)} /><br />
+          Amount : <input value={firstAmount} onChange={e => setFirstAmount(e.target.value)} /><br /><br />
+          Token1 Address : <input size="50" value={address1} onChange={e => setAddress1(e.target.value)} /><br/>
+          <div style={{"paddingLeft":"30px"}}>Select Token1 from list :&nbsp;
+          <select value={address1} onChange={(e)=>setAddress1(e.target.value)}>
+            {tokenMetadata.map((item, i) =>
+            (
+              <option key={i} value={item.address}>
+                {item.symbol}
+              </option>
+            )
+            )}
+          </select>
+          </div>
+          <br />
           Token2 Address : <input size="50" value={address2} onChange={e => setAddress2(e.target.value)} /><br />
+          <div style={{"paddingLeft":"30px"}}>Select Token2 from list :&nbsp;
+          <select value={address2} onChange={(e)=>setAddress2(e.target.value)}>
+            {tokenMetadata.map((item, i) =>
+            (
+              <option key={i} value={item.address}>
+                {item.symbol}
+              </option>
+            )
+            )}
+          </select>
+          </div>
+          <br/>
           Dex 1 :
           <select value={dex1} onChange={e => setDex1(e.target.value)}>
             {routers[chain.id]?.map((item, i) =>
@@ -270,7 +357,9 @@ function Profile() {
 
           </select>
           <br /><br />
-          <button onClick={() => flashLoanExecute()}>Execute FlashLoan</button> &nbsp;&nbsp;&nbsp;
+          {chain?.id==polygon.id &&
+            <button style={{"marginRight":"20px"}} onClick={() => flashLoanExecute()}>Execute FlashLoan</button> 
+          }
           <button onClick={() => regularExecute()}>Execute Regular</button><br />
           
           
